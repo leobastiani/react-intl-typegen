@@ -117,7 +117,7 @@ function flatten(target) {
     if (type === TYPE.tag) {
       return "(chunks: string) => Node";
     }
-    return "string | number";
+    return "Node";
   }
 
   const crowdin = Array.from(allIds)
@@ -180,33 +180,65 @@ import { IntlFormatters, IntlShape as IntlShapeOrig } from 'react-intl-orig';
 
 export * from 'react-intl-orig';
 
-type Crowdin<Node = string | number> = ${crowdin
+type Crowdin<Node = string | number> = {${crowdin
     .map(
       ({ id, isOptional, outputType }) =>
-        `{id:'${id}'${
-          outputType && `, values${isOptional ? "?" : ""}: ${outputType}`
-        }}`
+        `'${id}':${
+          outputType || 'never'
+        }`
     )
-    .join("|")};
-export const FormattedMessage: React.ComponentType<Crowdin<React.ReactNode> & {
-children?(nodes: React.ReactNode[]): React.ReactElement | null;
-}>;
+    .join(";")}};
 
-type ApplyValuesOptional<T extends { id: string }> = T extends {
-values?: any;
-}
-? undefined extends T['values']
-    ? [id: { id: T['id'] }, values?: T['values']]
-    : [id: { id: T['id'] }, values: T['values']]
-: [id: { id: T['id'] }];
+type CrowdinComponent = Crowdin<React.ReactNode>;
+type CrowdinFunction = Crowdin<string | number>;
+type KeyOfCrowdin = keyof Crowdin;
 
-function formatMessage<const T extends Crowdin['id']>(
-...args: ApplyValuesOptional<Extract<Crowdin, { id: T }>>
+type IsNull<T> = [T] extends [null] ? true : false;
+
+type IsUnknown<T> = unknown extends T
+  ? IsNull<T> extends false
+    ? true
+    : false
+  : false;
+
+type RequiredKeysOf<BaseType extends object> = Exclude<
+  {
+    [Key in keyof BaseType]: BaseType extends Record<Key, BaseType[Key]>
+      ? Key
+      : never;
+  }[keyof BaseType],
+  undefined
+>;
+
+type IfHasRequiredKeys<
+  BaseType extends object,
+  IfTrue,
+  IfFalse,
+> = RequiredKeysOf<BaseType> extends never ? IfFalse : IfTrue;
+
+type WithValues<Props, Values> = [Values] extends [never]
+  ? Props
+  : Props & IfHasRequiredKeys<Values, { values: Values }, { values?: Values }>;
+
+type ApplyValuesOptional<Values> = [Values] extends [never] ? [] : IfHasRequiredKeys<Values, [values: Values], [values?: Values]>;
+
+export function FormattedMessage<const T extends KeyOfCrowdin>(
+  props: WithValues<
+    {
+      id: T;
+      children?: (nodes: React.ReactNode[]) => React.ReactElement | null;
+    },
+    CrowdinComponent[T]
+  >,
+): JSX.Element;
+
+function formatMessage<const T extends KeyOfCrowdin>(
+  id: { id: T },
+  ...args: ApplyValuesOptional<CrowdinFunction[T]>
 ): string;
 
 export type IntlShape = Omit<IntlShapeOrig, keyof IntlFormatters> & {
-formatMessage: typeof formatMessage;
+  formatMessage: typeof formatMessage;
 };
-export function useIntl(): IntlShape;
-`);
+export function useIntl(): IntlShape;`);
 })();
