@@ -1,22 +1,33 @@
 #!/usr/bin/env node
 /* eslint-disable */
 
-import { readFile } from "node:fs/promises";
 import { parse, TYPE } from "@formatjs/icu-messageformat-parser";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 
 (async () => {
-  const translations = JSON.parse(
-    (
-      await readFile(
-        "./src/assets/translations/pt-PT/translations.json",
-        "utf-8"
-      )
-    ).replace(/^\uFEFF/, "")
+  const filePaths = process.argv.slice(2);
+  if (filePaths.length === 0) {
+    console.log("Usage: react-intl-typegen [...files]");
+    process.exit(1);
+  }
+  for (const filePath of filePaths) {
+    if (!existsSync(filePath)) {
+      console.error(`File not found: ${filePath}`);
+      process.exit(1);
+    }
+  }
+  const translations = await Promise.all(
+    filePaths.map(async (filePath) =>
+      JSON.parse((await readFile(filePath, "utf-8")).replace(/^\uFEFF/, ""))
+    )
   );
-
-  // const translations = {
-  //   leo: 'Convite de {therapistName}, para o dia {date, date} {number, number} {time, time}, <b>às</b> <b>{leo}</b> {hour}h{minute, select, 0 {# leo} other {<d>{minute}</d>}}. {plural, plural, one {# pessoa} other {# pessoas}}',
-  // };
+  const allIds = new Set();
+  for (const translation of translations) {
+    for (const id in translation) {
+      allIds.add(id);
+    }
+  }
 
   function parseAndGetValues(str) {
     if (typeof str !== "string") {
@@ -67,10 +78,14 @@ import { parse, TYPE } from "@formatjs/icu-messageformat-parser";
     return "string | number";
   }
 
-  const crowdin = Object.entries(translations)
+  const crowdin = Array.from(allIds)
     // .filter(([id]) => id === "EXAMPLE")
-    .map(([id, crowdinValue]) => {
-      const values = parseAndGetValues(crowdinValue);
+    .map((id) => {
+      const values = translations
+        .map((translation) => translation[id])
+        .filter(Boolean)
+        .map((v) => parseAndGetValues(v))
+        .flat(1);
       const groupedValues = {};
       for (const value of values) {
         groupedValues[value.name] ??= new Set();
