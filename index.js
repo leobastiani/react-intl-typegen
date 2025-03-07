@@ -19,6 +19,31 @@ Options:
 
 args["--optional-tags"] = args["--optional-tags"]?.split(",") ?? [];
 
+// copied from https://github.com/hughsk/flat/blob/f69225d3ef332fcb6951ec9e89706eb3aa986039/index.js
+function flatten(target) {
+  const output = {};
+
+  function step(object, prev) {
+    Object.keys(object).forEach(function (key) {
+      const value = object[key];
+      const type = Object.prototype.toString.call(value);
+      const isobject = type === "[object Object]" || type === "[object Array]";
+
+      const newKey = prev ? `${prev}.${key}` : key;
+
+      if (isobject && Object.keys(value).length) {
+        return step(value, newKey);
+      }
+
+      output[newKey] = value;
+    });
+  }
+
+  step(target);
+
+  return output;
+}
+
 (async () => {
   const filePaths = args["<file>"];
   if (filePaths.length === 0) {
@@ -33,9 +58,13 @@ args["--optional-tags"] = args["--optional-tags"]?.split(",") ?? [];
   }
   const translations = await Promise.all(
     filePaths.map(async (filePath) =>
-      JSON.parse((await readFile(filePath, "utf-8")).replace(/^\uFEFF/, ""))
+      flatten(
+        JSON.parse((await readFile(filePath, "utf-8")).replace(/^\uFEFF/, ""))
+      )
     )
   );
+  console.log("translations:", translations)
+  process.exit(0)
   const allIds = new Set();
   for (const translation of translations) {
     for (const id in translation) {
