@@ -4,9 +4,23 @@
 import { parse, TYPE } from "@formatjs/icu-messageformat-parser";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { docopt } from "docopt";
+
+const args = docopt(
+  `
+Usage:
+  react-intl-typegen [options] <file>...
+Options:
+  -h --help               Show this screen.
+  -d --debug              Debug mode.
+  -o --optional-tags=<o>  Optional tags, example "b,i" will make optional <b> and <i>.
+`.trim()
+);
+
+args["--optional-tags"] = args["--optional-tags"]?.split(",") ?? [];
 
 (async () => {
-  const filePaths = process.argv.slice(2);
+  const filePaths = args["<file>"];
   if (filePaths.length === 0) {
     console.log("Usage: react-intl-typegen [...files]");
     process.exit(1);
@@ -103,16 +117,22 @@ import { readFile } from "node:fs/promises";
           ];
         })
       );
-      const isOptional =
-        Object.values(groupedValuesString).length === 1 &&
-        groupedValuesString.b === toTypeString(TYPE.tag);
+      const isOptional = Object.entries(groupedValuesString).every(
+        ([id, type]) => {
+          return (
+            args["--optional-tags"].includes(id) &&
+            type === toTypeString(TYPE.tag)
+          );
+        }
+      );
       const outputType =
-        Object.entries(groupedValuesString).length === 0
+        Object.keys(groupedValuesString).length === 0
           ? ""
           : `{${Object.entries(groupedValuesString)
               .map(([key, value]) => {
                 const isOptional =
-                  key === "b" && value === toTypeString(TYPE.tag);
+                  args["--optional-tags"].includes(key) &&
+                  value === toTypeString(TYPE.tag);
                 return `${key}${isOptional ? "?" : ""}: ${value}`;
               })
               .join(";")}}`;
