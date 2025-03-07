@@ -1,0 +1,9 @@
+{
+  "name": "react-intl-typegen",
+  "type": "module",
+  "version": "0.0.1",
+  "bin": "index.js",
+  "dependencies": {
+    "@formatjs/icu-messageformat-parser": "*"
+  }
+}
