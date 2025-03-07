@@ -67,17 +67,6 @@ import { parse, TYPE } from "@formatjs/icu-messageformat-parser";
     return "string | number";
   }
 
-  function valuesToString(values) {
-    return `{${values
-      .map(
-        ({ name, type }) =>
-          `${name}${
-            name === "b" && type === TYPE.tag ? "?" : ""
-          }: ${toTypeString(type)}`
-      )
-      .join("; ")}}`;
-  }
-
   const crowdin = Object.entries(translations)
     // .filter(([id]) => id === "EXAMPLE")
     .map(([id, crowdinValue]) => {
