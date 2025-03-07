@@ -63,8 +63,7 @@ function flatten(target) {
       )
     )
   );
-  console.log("translations:", translations)
-  process.exit(0)
+
   const allIds = new Set();
   for (const translation of translations) {
     for (const id in translation) {
