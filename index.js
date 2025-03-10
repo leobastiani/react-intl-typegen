@@ -123,11 +123,25 @@ function flatten(target) {
   const crowdin = Array.from(allIds)
     // .filter(([id]) => id === "EXAMPLE")
     .map((id) => {
-      const values = translations
-        .map((translation) => translation[id])
-        .filter(Boolean)
-        .map((v) => parseAndGetValues(v))
-        .flat(1);
+      const values = (() => {
+        // in case the translation has a problem like an error in matching tags
+        try {
+          return translations
+            .map((translation) => translation[id])
+            .filter(Boolean)
+            .map((v) => parseAndGetValues(v))
+            .flat(1);
+        } catch (e) {
+          return "Error";
+        }
+      })();
+      if (values === "Error") {
+        return {
+          id,
+          isOptional: false,
+          outputType: "Error",
+        };
+      }
       const groupedValues = {};
       for (const value of values) {
         groupedValues[value.name] ??= new Set();
@@ -181,12 +195,7 @@ import { IntlFormatters, IntlShape as IntlShapeOrig } from 'react-intl-orig';
 export * from 'react-intl-orig';
 
 type Crowdin<Node = string | number> = {${crowdin
-    .map(
-      ({ id, isOptional, outputType }) =>
-        `'${id}':${
-          outputType || 'never'
-        }`
-    )
+    .map(({ id, isOptional, outputType }) => `'${id}':${outputType || "never"}`)
     .join(";")}};
 
 type CrowdinComponent = Crowdin<React.ReactNode>;
