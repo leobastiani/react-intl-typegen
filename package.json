@@ -1,7 +1,7 @@
 {
   "name": "react-intl-typegen",
   "type": "module",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "bin": "index.js",
   "files": [
     "index.js"
