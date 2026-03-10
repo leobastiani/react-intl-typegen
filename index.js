@@ -104,18 +104,24 @@ function flatten(target) {
     return variables;
   }
 
-  function toTypeString(type) {
-    if (type === TYPE.date) {
+  function toTypeString(value) {
+    if (value.type === TYPE.date) {
       return "Date";
     }
-    if (type === TYPE.time) {
+    if (value.type === TYPE.time) {
       return "Date";
     }
-    if (type === TYPE.number || type === TYPE.plural) {
+    if (value.type === TYPE.number || value.type === TYPE.plural) {
       return "number";
     }
-    if (type === TYPE.tag) {
+    if (value.type === TYPE.tag) {
       return "(chunks: string) => Node";
+    }
+    if(value.type === TYPE.select) {
+      const values = Object.keys(value.e.options).slice().sort().join(',')
+      if(values === 'other,true' || values === 'false,other') {
+        return "boolean";
+      }
     }
     return "Node";
   }
@@ -145,7 +151,7 @@ function flatten(target) {
       const groupedValues = {};
       for (const value of values) {
         groupedValues[value.name] ??= new Set();
-        groupedValues[value.name].add(toTypeString(value.type));
+        groupedValues[value.name].add(toTypeString(value));
       }
       const groupedValuesString = Object.fromEntries(
         Object.entries(groupedValues).map(([key, value]) => {
@@ -163,7 +169,7 @@ function flatten(target) {
         ([id, type]) => {
           return (
             args["--optional-tags"].includes(id) &&
-            type === toTypeString(TYPE.tag)
+            type === toTypeString({type:TYPE.tag})
           );
         }
       );
@@ -174,7 +180,7 @@ function flatten(target) {
               .map(([key, value]) => {
                 const isOptional =
                   args["--optional-tags"].includes(key) &&
-                  value === toTypeString(TYPE.tag);
+                  value === toTypeString({type:TYPE.tag});
                 return `${key}${isOptional ? "?" : ""}: ${value}`;
               })
               .join(";")}}`;

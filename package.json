@@ -2,8 +2,10 @@
   "name": "react-intl-typegen",
   "private": false,
   "type": "module",
-  "version": "0.1.0",
-  "bin": "index.js",
+  "version": "0.1.1",
+  "bin": {
+    "react-intl-typegen": "index.js"
+  },
   "files": [
     "index.js"
   ],
@@ -11,7 +13,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/leobastiani/react-intl-typegen"
+    "url": "git+https://github.com/leobastiani/react-intl-typegen.git"
   },
   "keywords": [
     "react-intl",
